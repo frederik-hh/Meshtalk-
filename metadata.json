@@ -1,0 +1,8 @@
+{
+  "name": "MeshTalk",
+  "description": "Progressive Web App port of the offline P2P messenger app, MeshTalk, using WebRTC for peer-to-peer communication.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
