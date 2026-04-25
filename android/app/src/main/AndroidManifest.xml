@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.meshtalk.app">
 
-    <!-- Permissions your WebView/PWA needs -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -12,9 +11,8 @@
     <application
         android:allowBackup="true"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.NoActionBar"
-        <!-- No android:icon or android:roundIcon – Android will use default -->
-        >
+        android:theme="@style/Theme.AppCompat.NoActionBar">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -25,4 +23,5 @@
             </intent-filter>
         </activity>
     </application>
+
 </manifest>
