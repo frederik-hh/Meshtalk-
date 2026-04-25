@@ -1,23 +1,61 @@
 name: Build APK
 on: [push]
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # Download your code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Install Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      # Build your PWA and copy into Android assets folder
       - name: Build PWA into Android assets
         run: npm install && npm run build:android
-      - uses: actions/setup-java@v4
+
+      # Install Java 17
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+
+      # 🔧 FIX THE MISSING / CORRUPT GRADLE WRAPPER JAR
+      # This downloads a real, valid gradle-wrapper.jar from Gradle’s official release
+      - name: Download valid gradle-wrapper.jar
+        working-directory: android/gradle/wrapper
+        run: |
+          # Remove any existing broken jar
+          rm -f gradle-wrapper.jar
+          # Download the official wrapper jar from Gradle's GitHub (version 8.7)
+          wget https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradle/wrapper/gradle-wrapper.jar
+          # Verify it's not empty
+          if [ ! -s gradle-wrapper.jar ]; then
+            echo "❌ Download failed – file is empty"
+            exit 1
+          fi
+          echo "✅ gradle-wrapper.jar is valid"
+
+      # Make sure the gradlew script is executable
+      - name: Make gradlew executable
+        working-directory: android
+        run: chmod +x gradlew
+
+      # Build the APK (chmod and build are now separate but safe)
       - name: Build APK
         working-directory: android
         run: ./gradlew assembleDebug
-      - uses: actions/upload-artifact@v4
+
+      # Upload the final APK
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: meshtalk-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
