@@ -1,52 +1,23 @@
 name: Build APK
-
-# This workflow runs automatically every time you push code to any branch
 on: [push]
-
 jobs:
   build:
-    # Use Ubuntu (Linux) because it's free and works well for Android builds
     runs-on: ubuntu-latest
-
     steps:
-      # 1. Download your repository code to the GitHub runner machine
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # 2. Install Node.js (needed to build your PWA / web app)
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      # 3. Build your PWA and copy the output into the Android assets folder
-      #    This runs "npm install" (downloads dependencies) then "npm run build:android"
-      #    Your package.json must have a script called "build:android"
       - name: Build PWA into Android assets
         run: npm install && npm run build:android
-
-      # 4. Install Java 17 (required by Gradle to compile Android code)
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-
-      # 5. Make the Gradle wrapper script executable
-      #    Without this, Linux/macOS will say "Permission denied"
-      - name: Make gradlew executable
-        working-directory: android
-        run: chmod +x gradlew
-
-      # 6. Build the actual APK using Gradle
-      #    assembleDebug creates an APK you can install without signing
       - name: Build APK
         working-directory: android
         run: ./gradlew assembleDebug
-
-      # 7. Save the generated APK as a downloadable artifact in GitHub Actions
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: meshtalk-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
