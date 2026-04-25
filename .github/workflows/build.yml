@@ -1,3 +1,10 @@
+- name: Make gradlew executable
+        working-directory: android
+        run: chmod +x gradlew
+
+      - name: Build APK
+        working-directory: android
+        run: ./gradlew assembleDebug
 name: Build APK
 on: [push]
 jobs:
