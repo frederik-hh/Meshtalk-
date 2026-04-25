@@ -1,61 +1,58 @@
 package com.meshtalk.app
 
 import android.os.Bundle
-import android.webkit.PermissionRequest
-import android.webkit.WebChromeClient
-import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.WebChromeClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.view.WindowCompat
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Make the app edge-to-edge (optional, looks better)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        
         setContent {
-            MaterialTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    MeshTalkWebView("file:///android_asset/index.html")
-                }
+            Surface(modifier = Modifier.fillMaxSize()) {
+                WebViewScreen()
             }
         }
     }
 }
 
 @Composable
-fun MeshTalkWebView(url: String) {
-    AndroidView(factory = { context ->
-        WebView(context).apply {
-            settings.apply {
-                javaScriptEnabled = true
-                domStorageEnabled = true
-                mediaPlaybackRequiresUserGesture = false
-                allowFileAccess = true
-                allowContentAccess = true
-                databaseEnabled = true
-                // Enable WebRTC features
-                displayZoomControls = false
-                builtInZoomControls = false
-                useWideViewPort = true
-                loadWithOverviewMode = true
-            }
-            webViewClient = WebViewClient()
-            webChromeClient = object : WebChromeClient() {
-                override fun onPermissionRequest(request: PermissionRequest) {
-                    // Automatically grant permissions for WebRTC features (Camera/Audio)
-                    request.grant(request.resources)
+fun WebViewScreen() {
+    val context = LocalContext.current
+    
+    AndroidView(
+        factory = { ctx ->
+            WebView(ctx).apply {
+                settings.apply {
+                    javaScriptEnabled = true
+                    domStorageEnabled = true
+                    allowFileAccess = true
+                    allowFileAccessFromFileURLs = true
+                    allowUniversalAccessFromFileURLs = true
+                    setSupportZoom(true)
+                    builtInZoomControls = true
+                    displayZoomControls = false
                 }
+                webViewClient = WebViewClient()
+                webChromeClient = WebChromeClient() // needed for some WebRTC features
+                
+                // Load your PWA from the assets folder
+                // This assumes your built PWA files are in android/app/src/main/assets/
+                loadUrl("file:///android_asset/index.html")
             }
-            loadUrl(url)
-        }
-    }, modifier = Modifier.fillMaxSize())
+        },
+        modifier = Modifier.fillMaxSize()
+    )
 }
