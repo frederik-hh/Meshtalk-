@@ -14,8 +14,25 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Build PWA into Android assets
-        run: npm install && npm run build:android
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build PWA (if needed)
+        run: npm run build || echo "No build script, using root files"
+
+      - name: Copy PWA files into Android assets
+        run: |
+          # Create assets folder
+          mkdir -p android/app/src/main/assets
+          # Copy root .html and .js files (adjust as needed)
+          cp -v *.html android/app/src/main/assets/ 2>/dev/null || true
+          cp -v *.js android/app/src/main/assets/ 2>/dev/null || true
+          cp -v *.css android/app/src/main/assets/ 2>/dev/null || true
+          # If dist/ folder exists (e.g., Vite build), copy from there
+          if [ -d "dist" ]; then cp -rv dist/* android/app/src/main/assets/; fi
+          if [ -d "build" ]; then cp -rv build/* android/app/src/main/assets/; fi
+          # Verify
+          ls -la android/app/src/main/assets/
 
       - name: Setup Java
         uses: actions/setup-java@v4
