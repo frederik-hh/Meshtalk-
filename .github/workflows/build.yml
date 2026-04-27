@@ -1,4 +1,4 @@
-name: Build APK
+ name: Build APK
 on: [push]
 
 jobs:
@@ -14,25 +14,28 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build PWA (if needed)
-        run: npm run build || echo "No build script, using root files"
+      - name: Install and build PWA
+        run: |
+          npm install
+          if npm run | grep -q "build$"; then
+            npm run build
+          else
+            echo "No build script found, will copy source files directly"
+          fi
 
       - name: Copy PWA files into Android assets
         run: |
-          # Create assets folder
           mkdir -p android/app/src/main/assets
-          # Copy root .html and .js files (adjust as needed)
-          cp -v *.html android/app/src/main/assets/ 2>/dev/null || true
-          cp -v *.js android/app/src/main/assets/ 2>/dev/null || true
-          cp -v *.css android/app/src/main/assets/ 2>/dev/null || true
-          # If dist/ folder exists (e.g., Vite build), copy from there
-          if [ -d "dist" ]; then cp -rv dist/* android/app/src/main/assets/; fi
-          if [ -d "build" ]; then cp -rv build/* android/app/src/main/assets/; fi
-          # Verify
-          ls -la android/app/src/main/assets/
+          find . -maxdepth 1 -type f ! -name ".*" -exec cp -v {} android/app/src/main/assets/ \;
+          for dir in css js images fonts assets dist build public src; do
+            if [ -d "$dir" ]; then
+              cp -rv "$dir" android/app/src/main/assets/
+            fi
+          done
+          if [ -d "dist" ]; then cp -rv dist/* android/app/src/main/assets/ 2>/dev/null || true; fi
+          if [ -d "build" ]; then cp -rv build/* android/app/src/main/assets/ 2>/dev/null || true; fi
+          echo "=== Assets contents ==="
+          ls -laR android/app/src/main/assets/
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -54,8 +57,22 @@ jobs:
         working-directory: android
         run: ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Extract version name from build.gradle.kts
+        id: get_version
+        working-directory: android/app
+        run: |
+          VERSION=$(grep 'versionName = ' build.gradle.kts | sed 's/.*versionName = "\(.*\)".*/\1/')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Extracted version: $VERSION"
+
+      - name: Rename APK with version
+        run: |
+          mkdir -p output
+          cp android/app/build/outputs/apk/debug/app-debug.apk output/Meshtalk_v${{ env.VERSION }}.apk
+          echo "Renamed APK to: Meshtalk_v${{ env.VERSION }}.apk"
+
+      - name: Upload APK (single file)
         uses: actions/upload-artifact@v4
         with:
-          name: meshtalk-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Meshtalk_v${{ env.VERSION }}
+          path: output/Meshtalk_v${{ env.VERSION }}.apk
